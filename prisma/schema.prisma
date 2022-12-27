@@ -64,3 +64,21 @@ model VerificationToken {
 
   @@unique([identifier, token])
 }
+
+model VideoChatUser {
+  id            String  @id @default(cuid())
+  name          String
+  contact       String
+  status        String  @default("waiting")
+  sourceMatches Match[] @relation("SourceMatches")
+  endMatches    Match[] @relation("EndMatches")
+}
+
+model Match {
+  id           String        @id @default(cuid())
+  sourceUserId String
+  endUserId    String
+  sourceUser   VideoChatUser @relation(name: "SourceMatches", fields: [sourceUserId], references: [id], onDelete: Cascade)
+  endUser      VideoChatUser @relation(name: "EndMatches", fields: [endUserId], references: [id], onDelete: Cascade)
+  status       String        @default("running")
+}

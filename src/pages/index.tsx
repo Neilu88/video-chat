@@ -1,18 +1,32 @@
+import { createUseQueriesProxy } from "@trpc/react-query/shared";
 import { type NextPage } from "next";
 import Head from "next/head";
 import { useForm } from "react-hook-form";
 import { trpc } from "../utils/trpc";
+import { useRouter } from "next/router";
+import {atom, useAtom} from "jotai";
 
-interface Data {
-  name:string,
-  contact:string,
+type RegisterForm = {
+  name: string;
+  contact: string;
 }
 
+export const userIdAtom = atom("");
+
 const Home: NextPage = () => {
+  const [userId, setUserId] = useAtom(userIdAtom);
   
+  const router = useRouter();
+  const createUser = trpc.users.createUser.useMutation();
   const { register, handleSubmit, watch, formState: { errors } } = useForm();
-  const onSubmit = (data: Data) => console.log(data);
-  const hello = trpc.example.hello.useQuery({ text: "from tRPC" });
+  
+  const onSubmit = async (data: RegisterForm) => {
+
+    const newUser = await createUser.mutateAsync(data);
+    setUserId(newUser.id);
+    router.push("/waiting");
+  }
+  
 
   return (
     <div>
