@@ -31,6 +31,7 @@ export const usersRouter = router({
         data: {
           sourceUserId: input.userId,
           endUserId: firstMatch.id,
+          status: "waiting",
         }
       })
 
