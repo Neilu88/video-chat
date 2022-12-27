@@ -38,7 +38,7 @@ const Home: NextPage = () => {
 
       <main data-theme="night" className="flex flex-col items-center justify-center min-h-screen">
       
-      <h1 className="text-5xl font-semibold bg-gradient-to-r from-sky-400 to-cyan-300 text-transparent bg-clip-text p-4 mb-10">Chat Room</h1>
+      <h1 className="text-5xl font-semibold bg-gradient-to-r from-sky-400 to-cyan-300 text-transparent bg-clip-text p-4 mb-10">Video Chat</h1>
 
       <div className="form-control w-full max-w-xs p-4 border-2 border-primary rounded-md">
         <form onSubmit={handleSubmit(onSubmit)}>

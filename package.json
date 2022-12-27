@@ -17,6 +17,7 @@
     "@trpc/next": "^10.0.0",
     "@trpc/react-query": "^10.0.0",
     "@trpc/server": "^10.0.0",
+    "agora-access-token": "^2.0.4",
     "daisyui": "^2.46.0",
     "jotai": "^1.12.0",
     "next": "13.1.1",

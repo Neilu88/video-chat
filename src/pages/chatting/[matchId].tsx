@@ -15,7 +15,8 @@ const WaitingPage: NextPage = () => {
   const [userId] = useAtom(userIdAtom)
 
   const matchQuery = trpc.matches.getMatch.useQuery({matchId});
-  
+  const tokenQuery = trpc.matches.getToken.useQuery({userId, matchId});
+
   const isEndUser = matchQuery.data?.endUserId === userId;
   let otherUserName = '';
   
@@ -23,6 +24,12 @@ const WaitingPage: NextPage = () => {
     otherUserName = isEndUser ? matchQuery.data.endUser.name : matchQuery.data.sourceUser.name
   }
   
+  useEffect(() => {
+    if(!tokenQuery.data) return;
+
+    // connect to agora video room
+
+  }, [tokenQuery.data])
  
   return (
     <div>
@@ -34,6 +41,7 @@ const WaitingPage: NextPage = () => {
 
       <main data-theme="night" className="flex flex-col items-center justify-center min-h-screen">
         <h1>Chatting with {`${otherUserName}`}</h1>
+        <h1>token {`${tokenQuery.data}`}</h1>
       </main>
     </div>
   );
