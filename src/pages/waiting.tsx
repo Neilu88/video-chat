@@ -17,6 +17,7 @@ const WaitingPage: NextPage = () => {
   const getMatchQuery = trpc.users.getMatch.useQuery({userId});
   
   useEffect(() => {
+    
     const match = findUserQuery.data;
     if (match) {
       router.push(`/chatting/${match.id}`)
