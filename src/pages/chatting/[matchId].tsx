@@ -146,7 +146,7 @@ const ChattingPage: NextPage = () => {
         }
         if (mediaType === "audio") {
           
-          otherUser?.audioTrack?.play;
+          otherUser?.audioTrack?.play();
         }
     }
       )
