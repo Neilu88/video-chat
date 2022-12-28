@@ -6,18 +6,12 @@ generator client {
 }
 
 datasource db {
-  provider = "sqlite"
-  // NOTE: When using postgresql, mysql or sqlserver, uncomment the @db.Text annotations in model Account below
-  // Further reading:
-  // https://next-auth.js.org/adapters/prisma#create-the-prisma-schema
-  // https://www.prisma.io/docs/reference/api-reference/prisma-schema-reference#string
+  provider = "postgresql"
   url      = env("DATABASE_URL")
 }
 
 model Example {
-  id        String   @id @default(cuid())
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id String @id @default(cuid())
 }
 
 // Necessary for Next auth
@@ -27,12 +21,12 @@ model Account {
   type              String
   provider          String
   providerAccountId String
-  refresh_token     String? // @db.Text
-  access_token      String? // @db.Text
+  refresh_token     String? //@db.Text
+  access_token      String? //@db.Text
   expires_at        Int?
   token_type        String?
   scope             String?
-  id_token          String? // @db.Text
+  id_token          String? //@db.Text
   session_state     String?
   user              User    @relation(fields: [userId], references: [id], onDelete: Cascade)
 
@@ -68,22 +62,22 @@ model VerificationToken {
 model VideoChatUser {
   id            String  @id @default(cuid())
   name          String
-  contact       String
+  contactInfo   String
   status        String  @default("waiting")
   sourceMatches Match[] @relation("SourceMatches")
-  endMatches    Match[] @relation("EndMatches")
+  endMatches    Match[] @relation("endMatches")
 }
 
 model Match {
   id                 String        @id @default(cuid())
   sourceUserId       String
   endsOn             String?
-  endUserId          String
   sourceUser         VideoChatUser @relation(name: "SourceMatches", fields: [sourceUserId], references: [id], onDelete: Cascade)
   sourceUserJoined   Boolean       @default(false)
-  endUser            VideoChatUser @relation(name: "EndMatches", fields: [endUserId], references: [id], onDelete: Cascade)
+  endUserId          String
   endUserJoined      Boolean       @default(false)
-  status             String        @default("chatting")
+  endUser            VideoChatUser @relation(name: "endMatches", fields: [endUserId], references: [id], onDelete: Cascade)
+  status             String        @default("waiting")
   sourceUserFeedback String?
   endUserFeedback    String?
 }
