@@ -1,4 +1,5 @@
 import { createUseQueriesProxy } from "@trpc/react-query/shared";
+import { IAgoraRTC, IAgoraRTCRemoteUser, ICameraVideoTrack, IRemoteVideoTrack } from "agora-rtc-sdk-ng";
 import { useAtom } from "jotai";
 import { type NextPage } from "next";
 import Head from "next/head";
@@ -8,34 +9,59 @@ import { useForm } from "react-hook-form";
 import { any, string } from "zod";
 import { userIdAtom } from "../";
 import { trpc } from "../../utils/trpc";
+import {Countdown} from "react-daisyui";
 //import AgoraRTC from "agora-rtc-sdk-ng";
 //import createClient from "agora-rtc-sdk-ng";
 
 const APP_ID = process.env.NEXT_PUBLIC_AGORA_APP_ID!;
 type Props = {
-  user: any;
+  videoTrack: ICameraVideoTrack | IRemoteVideoTrack;
 };
 
-export const VideoPlayer = ({ user }: Props) => {
-  const ref: any = useRef();
+export const VideoPlayer = ({videoTrack}: Props) => {
+
+
+  const ref = useRef(null);
 
   useEffect(()=> {
-    user.videoTrack.play(ref.current);
+
+    const playerRef = ref.current;
+    if (!videoTrack) return;
+    if (!playerRef) return;
+
+    videoTrack.play(playerRef);
+
+    return () => {
+      videoTrack.stop();
+    }
   }, [])
 
   return (
-    <div>
-      <div ref={ref} className='w-[200px] h-[200px]'></div>
+    <div className="flex items-center justify-center">
+      <div ref={ref} className='w-[250px] h-[250px]'></div>
     </div>
   )
 }
 
-const WaitingPage: NextPage = () => {
+const ChattingPage: NextPage = () => {
+  const [timeLeft, setTimeLeft] = useState<number>(25);
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setTimeLeft((v) => (v <= 0 ? 25 : v - 1))
+    }, 1000)
+
+    return () => {
+      clearTimeout(timer)
+    }
+  }, [timeLeft])
+
+  const promiseRef = useRef<any>(Promise.resolve());
   const router = useRouter()
   const matchId = router.query.matchId as string;
   const [userId] = useAtom(userIdAtom)
-  const [otherUser, setOtherUser] = useState<any>();
-  const [videoTrack, setVideoTrack] = useState()
+  const [otherUser, setOtherUser] = useState<IAgoraRTCRemoteUser>();
+  const [videoTrack, setVideoTrack] = useState<ICameraVideoTrack>()
 
   const matchQuery = trpc.matches.getMatch.useQuery({matchId});
   const tokenQuery = trpc.matches.getToken.useQuery({userId, matchId}, {
@@ -44,14 +70,23 @@ const WaitingPage: NextPage = () => {
 
   const isEndUser = matchQuery.data?.endUserId === userId;
   let otherUserName = '';
+
+
   
   if (matchQuery.data) {
     otherUserName = isEndUser ? matchQuery.data.endUser.name : matchQuery.data.sourceUser.name
   }
   
   useEffect(() => {
-    if(!tokenQuery.data) return;
 
+    if(!userId) {
+      router.push('/')
+      return;
+    }
+
+    
+    if(!tokenQuery.data) return;
+    if(!matchId) return;
     
 
 
@@ -86,16 +121,33 @@ const WaitingPage: NextPage = () => {
     })
 
     
-    const tracks: any = await AgoraRTC.createMicrophoneAndCameraTracks();
+    const tracks = await AgoraRTC.createMicrophoneAndCameraTracks();
     setVideoTrack(tracks[1]);
-    await client.publish(await AgoraRTC.createMicrophoneAndCameraTracks());
-
+    await client.publish(tracks[1]);
+    
+    return {tracks, client}
   }
 
-    connect();
+    promiseRef.current = promiseRef.current.then(connect);
 
-  }, [tokenQuery.data])
- 
+    return () => {
+      const disconnect = async () => {
+
+        const {client, tracks} = await promiseRef.current;
+        client.removeAllListeners();
+        videoTrack?.stop();
+        videoTrack?.close();
+
+        await client.unpublish(tracks[1]);
+        await client.leave();
+      }
+    promiseRef.current = promiseRef.current.then(disconnect)
+    disconnect();
+
+    }
+  }, [tokenQuery.data, matchId, userId])
+  
+
   return (
     <div>
       <Head>
@@ -105,20 +157,24 @@ const WaitingPage: NextPage = () => {
       </Head>
 
       <main data-theme="night" className="flex flex-col items-center justify-center min-h-screen">
-        <h1>Chatting with {`${otherUserName}`}</h1>
+        
+          <div className="space-y-2 md:space-y-4 p-2 flex flex-col items-center mb-10">
+            <h1 className="text-2xl md:text-5xl">Chatting with {`${otherUserName}`}</h1>
+            <Countdown className="text-2xl md:text-5xl text-secondary" value={timeLeft} />
+          </div>
 
-        <div className="flex flex-row items-center justify-center space-x-10">
-
-            {videoTrack && <VideoPlayer user={{uid: userId, videoTrack}} />}
-
-            {otherUser && <VideoPlayer user={otherUser} />}
-
-        </div>
-
+          <div className="flex flex-row items-center justify-center md:space-x-10">
+              <div className="hidden md:inline p-1 bg-gradient-to-r from-sky-400 to-cyan-300">
+                {videoTrack && <VideoPlayer videoTrack={videoTrack} />}
+              </div>
+              <div className="p-1 align-center bg-gradient-to-r from-sky-400 to-cyan-300">
+                {otherUser?.videoTrack && <VideoPlayer videoTrack={otherUser.videoTrack} />}
+              </div>
+          </div>
       </main>
     </div>
   );
 };
 
-export default WaitingPage;
+export default ChattingPage;
 
