@@ -3,19 +3,44 @@ import { useAtom } from "jotai";
 import { type NextPage } from "next";
 import Head from "next/head";
 import { useRouter } from "next/router";
-import { useEffect } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useForm } from "react-hook-form";
+import { any, string } from "zod";
 import { userIdAtom } from "../";
 import { trpc } from "../../utils/trpc";
+//import AgoraRTC from "agora-rtc-sdk-ng";
+//import createClient from "agora-rtc-sdk-ng";
 
+const APP_ID = process.env.NEXT_PUBLIC_AGORA_APP_ID!;
+type Props = {
+  user: any;
+};
+
+export const VideoPlayer = ({ user }: Props) => {
+  const ref: any = useRef();
+
+  useEffect(()=> {
+    user.videoTrack.play(ref.current);
+  }, [])
+
+  return (
+    <div>
+      <div ref={ref} className='w-[200px] h-[200px]'></div>
+    </div>
+  )
+}
 
 const WaitingPage: NextPage = () => {
   const router = useRouter()
   const matchId = router.query.matchId as string;
   const [userId] = useAtom(userIdAtom)
+  const [otherUser, setOtherUser] = useState<any>();
+  const [videoTrack, setVideoTrack] = useState()
 
   const matchQuery = trpc.matches.getMatch.useQuery({matchId});
-  const tokenQuery = trpc.matches.getToken.useQuery({userId, matchId});
+  const tokenQuery = trpc.matches.getToken.useQuery({userId, matchId}, {
+    refetchOnWindowFocus: false
+  });
 
   const isEndUser = matchQuery.data?.endUserId === userId;
   let otherUserName = '';
@@ -27,7 +52,47 @@ const WaitingPage: NextPage = () => {
   useEffect(() => {
     if(!tokenQuery.data) return;
 
+    
+
+
     // connect to agora video room
+    const connect = async() => {
+      const { default: AgoraRTC } = await import("agora-rtc-sdk-ng");
+
+      
+      const token = tokenQuery.data;
+
+      const client = AgoraRTC.createClient({
+        mode:"rtc",
+        codec: "vp8",
+      })
+
+     await client.join(
+        APP_ID,
+        matchId,
+        token,
+        userId,
+      );
+  
+
+    client.on("user-published", (user: any, mediaType: any) => {
+      client.subscribe(user, mediaType).then(() => {
+        if (mediaType === "video") {
+          
+          setOtherUser(user)
+        }
+    }
+      )
+    })
+
+    
+    const tracks: any = await AgoraRTC.createMicrophoneAndCameraTracks();
+    setVideoTrack(tracks[1]);
+    await client.publish(await AgoraRTC.createMicrophoneAndCameraTracks());
+
+  }
+
+    connect();
 
   }, [tokenQuery.data])
  
@@ -41,7 +106,15 @@ const WaitingPage: NextPage = () => {
 
       <main data-theme="night" className="flex flex-col items-center justify-center min-h-screen">
         <h1>Chatting with {`${otherUserName}`}</h1>
-        <h1>token {`${tokenQuery.data}`}</h1>
+
+        <div className="flex flex-row items-center justify-center space-x-10">
+
+            {videoTrack && <VideoPlayer user={{uid: userId, videoTrack}} />}
+
+            {otherUser && <VideoPlayer user={otherUser} />}
+
+        </div>
+
       </main>
     </div>
   );
