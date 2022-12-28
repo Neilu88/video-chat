@@ -90,7 +90,7 @@ const ChattingPage: NextPage = () => {
     router.push("/done")
   }
 
-  const timeLeft = matchQuery.data?.endsOn;
+  const timeLeft: any = matchQuery.data?.endsOn;
 
   const isEndUser = matchQuery.data?.endUserId === userId;
 

@@ -20,7 +20,7 @@ const Home: NextPage = () => {
   const createUser = trpc.users.createUser.useMutation();
   const { register, handleSubmit, watch, formState: { errors } } = useForm();
   
-  const onSubmit = async (data: RegisterForm) => {
+  const onSubmit: any = async (data: RegisterForm) => {
 
     const newUser = await createUser.mutateAsync(data);
     setUserId(newUser.id);
