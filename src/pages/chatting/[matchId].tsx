@@ -160,12 +160,12 @@ const ChattingPage: NextPage = () => {
     return {tracks, client}
   }
 
-    promiseRef.current = promiseRef.current.then(connect);
+    const connection = connect()
 
     return () => {
       const disconnect = async () => {
 
-        const {client, tracks} = await promiseRef.current;
+        const {client, tracks} = await connection;
         client.removeAllListeners();
         tracks[0].stop();
         tracks[0].close();
@@ -175,7 +175,6 @@ const ChattingPage: NextPage = () => {
         await client.unpublish(tracks);
         await client.leave();
       }
-    promiseRef.current = promiseRef.current.then(disconnect)
     disconnect();
 
     }
