@@ -9,7 +9,7 @@ import { useForm } from "react-hook-form";
 import { any, string } from "zod";
 import { userIdAtom } from "../";
 import { trpc } from "../../utils/trpc";
-import {Countdown} from "react-daisyui";
+import Countdown from "react-countdown";
 //import AgoraRTC from "agora-rtc-sdk-ng";
 //import createClient from "agora-rtc-sdk-ng";
 
@@ -44,17 +44,7 @@ export const VideoPlayer = ({videoTrack}: Props) => {
 }
 
 const ChattingPage: NextPage = () => {
-  const [timeLeft, setTimeLeft] = useState<number>(25);
-
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      setTimeLeft((v) => (v <= 0 ? 25 : v - 1))
-    }, 1000)
-
-    return () => {
-      clearTimeout(timer)
-    }
-  }, [timeLeft])
+  const [timeLeft] = useState(Date.now() + 1000 * 20);
 
   const promiseRef = useRef<any>(Promise.resolve());
   const router = useRouter()
@@ -62,7 +52,16 @@ const ChattingPage: NextPage = () => {
   const [userId] = useAtom(userIdAtom)
   const [otherUser, setOtherUser] = useState<IAgoraRTCRemoteUser>();
   const [videoTrack, setVideoTrack] = useState<ICameraVideoTrack>()
+  const setStatusMutation = trpc.users.setStatus.useMutation();
 
+  useEffect(() => {
+    if(!userId) return
+    setStatusMutation.mutate({userId, status:"chatting"})
+  }, [])
+
+  const handleCoutdownCompleted = () => {
+    router.push("/done")
+  }
   const matchQuery = trpc.matches.getMatch.useQuery({matchId});
   const tokenQuery = trpc.matches.getToken.useQuery({userId, matchId}, {
     refetchOnWindowFocus: false
@@ -84,7 +83,7 @@ const ChattingPage: NextPage = () => {
       return;
     }
 
-    
+    if(!router) return;
     if(!tokenQuery.data) return;
     if(!matchId) return;
     
@@ -135,8 +134,8 @@ const ChattingPage: NextPage = () => {
 
         const {client, tracks} = await promiseRef.current;
         client.removeAllListeners();
-        videoTrack?.stop();
-        videoTrack?.close();
+        tracks[1].stop();
+        tracks[1].close();
 
         await client.unpublish(tracks[1]);
         await client.leave();
@@ -145,7 +144,7 @@ const ChattingPage: NextPage = () => {
     disconnect();
 
     }
-  }, [tokenQuery.data, matchId, userId])
+  }, [tokenQuery.data, matchId, userId, router])
   
 
   return (
@@ -160,14 +159,14 @@ const ChattingPage: NextPage = () => {
         
           <div className="space-y-2 md:space-y-4 p-2 flex flex-col items-center mb-10">
             <h1 className="text-2xl md:text-5xl">Chatting with {`${otherUserName}`}</h1>
-            <Countdown className="text-2xl md:text-5xl text-secondary" value={timeLeft} />
+            <Countdown className="text-2xl md:text-5xl text-secondary" onComplete={handleCoutdownCompleted} date={timeLeft} />
           </div>
 
           <div className="flex flex-row items-center justify-center md:space-x-10">
               <div className="hidden md:inline p-1 bg-gradient-to-r from-sky-400 to-cyan-300">
                 {videoTrack && <VideoPlayer videoTrack={videoTrack} />}
               </div>
-              <div className="p-1 align-center bg-gradient-to-r from-sky-400 to-cyan-300">
+              <div className="p-1 bg-gradient-to-r from-sky-400 to-cyan-300">
                 {otherUser?.videoTrack && <VideoPlayer videoTrack={otherUser.videoTrack} />}
               </div>
           </div>

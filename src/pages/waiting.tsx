@@ -15,6 +15,13 @@ const WaitingPage: NextPage = () => {
   
   const findUserQuery = trpc.users.findMatch.useQuery({userId});
   const getMatchQuery = trpc.users.getMatch.useQuery({userId});
+  const setStatusMutation = trpc.users.setStatus.useMutation();
+
+  useEffect(() => {
+    if(!userId) return
+
+    setStatusMutation.mutate({userId, status:"waiting"})
+  }, [])
   
   useEffect(() => {
     
