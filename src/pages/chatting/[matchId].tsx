@@ -101,7 +101,7 @@ const ChattingPage: NextPage = () => {
 
   
   if (matchQuery.data) {
-    otherUserName = isEndUser ? matchQuery.data.endUser.name : matchQuery.data.sourceUser.name
+    otherUserName = isEndUser ? matchQuery.data.sourceUser.name : matchQuery.data.endUser.name
   }
   
   useEffect(() => {
@@ -172,7 +172,7 @@ const ChattingPage: NextPage = () => {
         tracks[1].stop();
         tracks[1].close();
         
-        await client.unpublish(tracks[1]);
+        await client.unpublish(tracks);
         await client.leave();
       }
     promiseRef.current = promiseRef.current.then(disconnect)
