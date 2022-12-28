@@ -62,7 +62,7 @@ model VerificationToken {
 model VideoChatUser {
   id            String  @id @default(cuid())
   name          String
-  contactInfo   String
+  contact       String
   status        String  @default("waiting")
   sourceMatches Match[] @relation("SourceMatches")
   endMatches    Match[] @relation("endMatches")
