@@ -1,5 +1,5 @@
 import { createUseQueriesProxy } from "@trpc/react-query/shared";
-import { IAgoraRTC, IAgoraRTCRemoteUser, ICameraVideoTrack, IRemoteVideoTrack } from "agora-rtc-sdk-ng";
+import { IAgoraRTC, IAgoraRTCRemoteUser, ICameraVideoTrack, IRemoteVideoTrack, IMicrophoneAudioTrack} from "agora-rtc-sdk-ng";
 import { atom, useAtom } from "jotai";
 import { type NextPage } from "next";
 import Head from "next/head";
@@ -138,11 +138,11 @@ const ChattingPage: NextPage = () => {
       );
   
 
-    client.on("user-published", (user: any, mediaType: any) => {
-      client.subscribe(user, mediaType).then(() => {
+    client.on("user-published", (otherUser: any, mediaType: any) => {
+      client.subscribe(otherUser, mediaType).then(() => {
         if (mediaType === "video") {
           
-          setOtherUser(user)
+          setOtherUser(otherUser)
         }
         if (mediaType === "audio") {
           
