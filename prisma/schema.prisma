@@ -75,10 +75,15 @@ model VideoChatUser {
 }
 
 model Match {
-  id           String        @id @default(cuid())
-  sourceUserId String
-  endUserId    String
-  sourceUser   VideoChatUser @relation(name: "SourceMatches", fields: [sourceUserId], references: [id], onDelete: Cascade)
-  endUser      VideoChatUser @relation(name: "EndMatches", fields: [endUserId], references: [id], onDelete: Cascade)
-  status       String        @default("running")
+  id                 String        @id @default(cuid())
+  sourceUserId       String
+  endsOn             String?
+  endUserId          String
+  sourceUser         VideoChatUser @relation(name: "SourceMatches", fields: [sourceUserId], references: [id], onDelete: Cascade)
+  sourceUserJoined   Boolean       @default(false)
+  endUser            VideoChatUser @relation(name: "EndMatches", fields: [endUserId], references: [id], onDelete: Cascade)
+  endUserJoined      Boolean       @default(false)
+  status             String        @default("chatting")
+  sourceUserFeedback String?
+  endUserFeedback    String?
 }

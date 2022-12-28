@@ -65,7 +65,11 @@ export const usersRouter = router({
       const match = await ctx.prisma.match.findFirst({
         where: {
           endUserId: input.userId,
+          NOT: {
+            status: "chatting",
+          }
       },
+     
       });
 
       return match;

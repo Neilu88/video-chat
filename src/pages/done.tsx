@@ -5,12 +5,41 @@ import { useForm } from "react-hook-form";
 import { trpc } from "../utils/trpc";
 import { useRouter } from "next/router";
 import {atom, useAtom} from "jotai";
+import { userIdAtom } from ".";
+import { matchIdAtom } from "./chatting/[matchId]";
+import { useEffect, useState } from "react";
 
 
 
 const Done: NextPage = () => {
   const router = useRouter();
+  const [userId] = useAtom(userIdAtom)
+  const [matchId] = useAtom(matchIdAtom)
+  const postFeedbackMutation = trpc.matches.postFeedback.useMutation();
+  const matchQuery = trpc.matches.getMatch.useQuery({matchId});
+  const [feedbackSent, setFeedBackSent] = useState(false);
   
+
+
+  const postFeedback = (status: string) => {
+    postFeedbackMutation.mutateAsync({userId, matchId, status})
+    setFeedBackSent(true);
+  }
+
+  useEffect(()=> {
+    const interval = setInterval(()=> {
+      matchQuery.refetch();
+    }, 5000)
+    return () => {
+      clearInterval(interval)
+    }
+  }, [matchQuery])
+
+  const bothFeedbacksProvided = matchQuery.data?.endUserFeedback  && matchQuery.data?.sourceUserFeedback
+  const bothLiked = matchQuery.data?.endUserFeedback ==='like' && matchQuery.data?.sourceUserFeedback === 'like'
+
+  const isEndUser = matchQuery.data?.endUserId === userId;
+  const contactInfo = isEndUser ? matchQuery.data?.sourceUser.contact : matchQuery.data?.endUser.contact
 
   return (
     <div>
@@ -22,9 +51,36 @@ const Done: NextPage = () => {
 
       <main data-theme="night" className="flex flex-col items-center justify-center min-h-screen">
       
-      <h1 className="text-5xl font-semibold bg-gradient-to-r from-sky-400 to-cyan-300 text-transparent bg-clip-text p-4 mb-10">Video Chat Done</h1>
-        <button onClick={() => router.push("/waiting")} className="btn bg-gradient-to-r from-sky-400 to-cyan-300 mt-10 text-black max-w-2xl">Go to Waiting Room</button>
-        
+      <h1 className="text-center text-5xl font-semibold bg-gradient-to-r from-sky-400 to-cyan-300 text-transparent bg-clip-text p-4">Video Chat Done</h1>
+        <div className="flex space-x-2">
+            {!feedbackSent &&
+            <>
+            <button onClick={() => postFeedback("like")} className="btn bg-success text-black w-20">Like</button>
+            <button onClick={() => postFeedback("dislike")} className="btn bg-error text-black w-20">Dislike</button>
+            </>
+            }
+        </div>
+        {feedbackSent && !bothFeedbacksProvided && (
+          <div>Waiting for other user to give a like or dislike...</div>
+        )}
+        {bothFeedbacksProvided && bothLiked && (
+          
+          <div className="text-2xl mb-10">
+            
+
+            Contact Info: <span className="text-accent">{contactInfo}</span> 
+          </div>
+        )}
+        {bothFeedbacksProvided && !bothLiked && (
+          <div>
+          
+          </div>
+        )}
+
+        {bothFeedbacksProvided && (
+          <button onClick={() => router.push("/waiting")} className="btn bg-gradient-to-r from-sky-400 to-cyan-300 mt-5 text-black w-60">Go Back to Waiting Room</button>
+        )
+        }
       </main>
     </div>
   );

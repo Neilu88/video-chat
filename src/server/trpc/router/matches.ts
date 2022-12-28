@@ -5,8 +5,62 @@ import {
     RtcTokenBuilder,
     RtcRole,
   } from "agora-access-token"
+import { userIdAtom } from "../../../pages";
   
 export const matchesRouter = router({
+  postFeedback: publicProcedure
+    .input(z.object({ matchId: z.string(), userId: z.string(), status: z.string()}))
+    .mutation(async ({ input, ctx }) => {
+      // TODO: persist that user info
+      const match = await ctx.prisma.match.findUnique({
+        where: {
+          id: input.matchId,
+        }
+      })
+      const isEndUser = match?.endUserId === input.userId;
+
+      await ctx.prisma.match.update({
+        where: {
+            id: input.matchId,
+        },
+        data: {
+          [isEndUser ? 'endUserFeedback': 'sourceUserFeedback']: input.status
+        }
+    })
+      }),
+  
+  joinMatch: publicProcedure
+      .input(z.object({ matchId: z.string(), userId: z.string()}))
+      .mutation(async ({ input, ctx }) => {
+        const match = await ctx.prisma.match.findUnique({
+          where: {
+            id: input.matchId,
+          },
+        });
+        const isSinkUser = input.userId === match?.endUserId;
+  
+        const updatedMatch = await ctx.prisma.match.update({
+          where: {
+            id: input.matchId,
+          },
+          data: {
+            [isSinkUser ? "endUserJoined" : "sourceUserJoined"]: true,
+          },
+        });
+  
+        if (updatedMatch.endUserJoined && updatedMatch.sourceUserJoined) {
+          await ctx.prisma.match.update({
+            where: {
+              id: input.matchId,
+            },
+            data: {
+              status: "chatting",
+              endsOn: `${Date.now() + 20 * 1000}`,
+              }})
+          }
+      
+        }),
+
   getMatch: publicProcedure
     .input(z.object({ matchId: z.string()}))
     .query(async ({ input, ctx }) => {

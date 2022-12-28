@@ -13,8 +13,16 @@ const WaitingPage: NextPage = () => {
   const router = useRouter()
   const [userId] = useAtom(userIdAtom)
   
-  const findUserQuery = trpc.users.findMatch.useQuery({userId});
-  const getMatchQuery = trpc.users.getMatch.useQuery({userId});
+  const findUserQuery = trpc.users.findMatch.useQuery({userId}, {
+    refetchOnWindowFocus:false,
+    cacheTime:0,
+    staleTime: 0,
+  });
+  const getMatchQuery = trpc.users.getMatch.useQuery({userId}, {
+    refetchOnWindowFocus:false,
+    cacheTime:0,
+    staleTime: 0,
+  });
   const setStatusMutation = trpc.users.setStatus.useMutation();
 
   useEffect(() => {
